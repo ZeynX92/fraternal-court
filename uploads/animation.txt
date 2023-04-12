@@ -1,0 +1,35 @@
+from .paginators import ButtonPaginator
+import disnake
+import asyncio
+
+
+class Animation:
+    def __init__(
+            self,
+            paginator: ButtonPaginator,
+            interaction,
+            animation_time: int = None
+    ):
+
+        if isinstance(paginator, ButtonPaginator):
+            self.paginator = paginator
+        else:
+            raise ValueError(f"{type(paginator)} is not {type(ButtonPaginator)}")
+
+        if animation_time is None:
+            self.animation_time = len(self.paginator.embeds) * 20
+        else:
+            self.animation_time = animation_time
+
+        self.paginator_view = self.paginator.view(interaction=interaction)
+
+    async def start(self):
+        for embed in self.paginator.embeds[1::]:
+
+            print(self.paginator, self.animation_time)
+
+            await asyncio.sleep(self.animation_time // len(self.paginator.embeds))
+            if len(self.paginator.embeds)+1 == self.paginator.current_page:
+                await self.paginator_view.set_page(1)
+                continue
+            await self.paginator_view.next_page()

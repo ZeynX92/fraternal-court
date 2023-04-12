@@ -1,0 +1,14 @@
+.title {
+    float: left;
+}
+nav {
+    float: right;
+    position: absolute;
+    right: 15px;
+}
+
+header {
+    margin: 1em 0;
+    display: inline-block;
+    background-color: #dddddd; /* или любой другой цвет */
+}

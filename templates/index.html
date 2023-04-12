@@ -1,0 +1,45 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Встречайте: код наших братьев и сестёр</h1>
+<nobr>
+    {% if current_user.is_authenticated %}
+    <a href="addreview" class="btn btn-secondary">Add on Review</a>
+    {% endif %}
+    {% for item in reviews%}
+    <h2>Review #{{ item.id }}</h2>
+    <table id="reviews">
+        <tr>
+            <th>Code</th>
+            <th>Language</th>
+            <th>author</th>
+        </tr>
+        <tr>
+            <td>
+                <pre>
+                    {{ item.code }}
+                </pre>
+            </td>
+            <td>{{ item.language_obj.language }}</td>
+            <td>{{ item.author_user.nickname }}</td>
+        </tr>
+    </table>
+    <br>
+    {% if current_user.is_authenticated and (current_user == item.author_user or current_user.id == 1) %}
+    <div>
+        <a href="/review/{{ item.id }}" class="btn btn-warning">
+            Изменить
+        </a>
+        <a href="/review_delete/{{ item.id }}" class="btn btn-danger">
+            Удалить
+        </a>
+    </div>
+    {% endif %}
+    <div>
+        <a href="/comment_review/{{ item.id }}" class="btn btn-primary">
+            Судить
+        </a>
+    </div>
+    {% endfor %}
+</nobr>
+{% endblock %}

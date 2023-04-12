@@ -1,0 +1,52 @@
+from tkinter import *
+from tkinter import ttk
+
+
+# TODO: Сделать нормальную систему отображения после удаления вкладок
+def delete_game_activity(event):
+    index = int(event.widget.winfo_parent()[-1]) - 2
+    activity[index].destroy()
+    activity[index] = None
+
+
+def add_game_activity():
+    activity.append(ttk.Frame(tab_control))
+    tab_control.add(activity[-1], text=f'Game Activity №{activity.index(activity[-1]) + 1}')
+
+    label = Label(activity[-1], text=f'Настройка {activity.index(activity[-1]) + 1}-ой игровой активности')
+    label.grid(column=0, row=0)
+
+    tab_control.pack(expand=1, fill='both')
+
+    btn = Button(activity[-1], text="Удалить Игровую Активность")
+    btn.bind('<Button-1>', delete_game_activity)
+    btn.grid(column=0, row=1)
+
+
+window = Tk()
+window.title("Discord Activity Manager")
+window.geometry('400x250')
+
+tab_control = ttk.Notebook(window)
+activity = [ttk.Frame(tab_control)]
+
+main_menu = ttk.Frame(tab_control)
+tab_control.add(main_menu, text='Панель Управления')
+main_menu_lbl = Label(main_menu, text='Основной Экран')
+main_menu_lbl.grid(column=0, row=0)
+
+btn = Button(main_menu, text="Создать Новую Игровую Активность", command=add_game_activity)
+btn.grid(column=0, row=1)
+
+for i in range(len(activity)):
+    tab_control.add(activity[i], text=f'Game Activity №{i + 1}')
+
+    lbl = Label(activity[i], text=f'Настройка {i + 1}-ой игровой активности')
+    lbl.grid(column=0, row=0)
+
+    tab_control.pack(expand=1, fill='both')
+
+    btn = Button(activity[-1], text="Удалить Игровую Активность")
+    btn.grid(column=0, row=1)
+
+window.mainloop()

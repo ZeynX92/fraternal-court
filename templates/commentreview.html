@@ -1,0 +1,49 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Встречайте: код нашего брата/сестры {{ review.author_user.nickname }}</h1>
+<nobr>
+    <div>
+        <pre>
+            {{ review.code }}
+        </pre>
+        <h5>{{ review.language_obj.language }}</h5>
+        <br>
+    </div>
+    {% if current_user.is_authenticated and (current_user == review.author_user or current_user.id == 1) %}
+    <div>
+        <a href="/review/{{ review.id }}" class="btn btn-warning">
+            Изменить
+        </a>
+        <a href="/review_delete/{{ review.id }}" class="btn btn-danger">
+            Удалить
+        </a>
+    </div>
+    {% endif %}
+    {% if current_user.is_authenticated %}
+    <div>
+        <a href="/add_comment_review/{{ review.id }}" class="btn btn-primary">
+            Добавить комментарий
+        </a>
+    </div>
+    {% endif %}
+    {% for item in review.comments%}
+    <div>
+        <h5>By: {{ item.author_user.nickname }}</h5>
+        <md-block>
+            {{ item.comment_text }}
+        </md-block>
+        {% if current_user.is_authenticated and (current_user == item.author_user or current_user.id == 1) %}
+        <div>
+            <a href="/comment/{{ item.id }}" class="btn btn-warning">
+                Изменить
+            </a>
+            <a href="/comment_delete/{{ item.id }}" class="btn btn-danger">
+                Удалить
+            </a>
+        </div>
+        {% endif %}
+    </div>
+    {% endfor %}
+</nobr>
+{% endblock %}

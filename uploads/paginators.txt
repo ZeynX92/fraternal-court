@@ -1,0 +1,163 @@
+import disnake
+
+
+async def foo_response(interaction):
+    await interaction.reponse.send_message(disnake.Embed(title="Вы - не отправитель этой команды"), ephemeral=True)
+
+
+class ButtonPaginator:
+    def __init__(
+            self,
+            segments,
+            target_page=1,
+            timeout=300,
+            invalid_response=foo_response
+    ):
+        self.embeds = []
+        self.current_page = target_page
+        self.timeout = timeout
+        self.button_style = disnake.ButtonStyle.gray
+        self.invalid_response = invalid_response
+
+        # Check, that segments are disnake.Embed
+
+        for segment in segments:
+            if isinstance(segment, disnake.Embed):
+                self.embeds.append(segment)
+            else:
+                raise ValueError(f"{type(segment)} is not disnake.Embed")
+
+        # Normalization self.current_page
+
+        if self.current_page > len(segments) or self.current_page < 1:
+            self.current_page = 1
+
+        # Main disnake.ui.View for Paginator
+
+        # noinspection PyMethodParameters
+        class PaginatorView(disnake.ui.View):
+            def __init__(this, interaction):
+                super().__init__()
+
+                this.timeout = self.timeout
+                this.interaction = interaction
+
+            async def on_timeout(this):
+                for button in this.children:
+                    button.disabled = True
+                await this.interaction.edit_original_message(embed=self.embeds[self.current_page-1])
+                return await super().on_timeout()
+
+            def update_page(this):
+                for button in this.children:
+                    if button.label:
+                        if button.label.strip() != "":
+                            button.label = f"{self.current_page}/{len(self.embeds)}"
+
+            @disnake.ui.button(emoji="⏪", style=self.button_style,
+                               disabled=True if len(self.embeds) == 1 else False)
+            async def first_button(this, _, button_interaction):
+                if button_interaction.author != this.interaction.author:
+                    await self.invalid_response(button_interaction)
+                    return
+
+                if len(self.embeds) >= 15:
+                    self.current_page = (self.current_page - 10) % len(self.embeds)
+                    if self.current_page < 1:
+                        self.current_page = len(self.embeds)
+                    if self.current_page == 0:
+                        self.current_page = 1
+                else:
+                    self.current_page = 1
+                this.update_page()
+                await button_interaction.response.edit_message(embed=self.embeds[self.current_page - 1], view=this)
+
+            @disnake.ui.button(emoji="◀️", style=self.button_style,
+                               disabled=True if len(self.embeds) == 1 else False)
+            async def previous_button(this, _, button_interaction):
+                if button_interaction.author != this.interaction.author:
+                    await self.invalid_response(button_interaction)
+                    return
+
+                self.current_page -= 1
+                if self.current_page < 1:
+                    self.current_page = len(self.embeds)
+                this.update_page()
+                await button_interaction.response.edit_message(embed=self.embeds[self.current_page - 1], view=this)
+
+            @disnake.ui.button(label=f"{self.current_page}/{len(self.embeds)}", style=disnake.ButtonStyle.gray,
+                               disabled=True)
+            async def page_button(*_):
+                pass
+
+            @disnake.ui.button(emoji="▶️", style=self.button_style,
+                               disabled=True if len(self.embeds) == 1 else False)
+            async def next_button(this, _, button_interaction):
+                if button_interaction.author != this.interaction.author:
+                    await self.invalid_response(button_interaction)
+                    return
+
+                self.current_page += 1
+                if self.current_page > len(self.embeds):
+                    self.current_page = 1
+                this.update_page()
+                await button_interaction.response.edit_message(embed=self.embeds[self.current_page - 1], view=this)
+
+            @disnake.ui.button(emoji="⏩", style=self.button_style,
+                               disabled=True if len(self.embeds) == 1 else False)
+            async def last_button(this, _, button_interaction):
+                if button_interaction.author != this.interaction.author:
+                    await self.invalid_response(button_interaction)
+                    return
+
+                if len(self.embeds) >= 15:
+                    self.current_page = (self.current_page + 10) % len(self.embeds)
+                    if self.current_page > len(self.embeds):
+                        self.current_page = 1
+                    if self.current_page == 0:
+                        self.current_page = len(self.embeds)
+                else:
+                    self.current_page = len(self.embeds)
+                this.update_page()
+                await button_interaction.response.edit_message(embed=self.embeds[self.current_page - 1], view=this)
+
+            async def next_page(this):
+                self.current_page += 1
+                if self.current_page > len(self.embeds):
+                    self.current_page = 1
+                this.update_page()
+                await this.interaction.edit_original_message(embed=self.embeds[self.current_page - 1], view=this)
+
+            async def previous_page(this):
+                self.current_page -= 1
+                if self.current_page < 1:
+                    self.current_page = len(self.embeds)
+                this.update_page()
+                await this.interaction.response.edit_message(embed=self.embeds[self.current_page - 1], view=this)
+
+            async def set_page(this, page_number: int):
+                if page_number > len(self.embeds):
+                    raise ValueError(f"Page number more than self.embeds")
+                if page_number < 1:
+                    raise ValueError(f"Page number cannot be less than 1")
+                self.current_page = page_number
+                this.update_page()
+                await this.interaction.response.edit_message(embed=self.embeds[self.current_page - 1], view=this)
+
+        self.view = PaginatorView
+
+    async def start(self, interaction, ephemeral=False, deferred=False):
+        if not deferred:
+            await interaction.response.send_message(embed=self.embeds[self.current_page - 1],
+                                                    view=self.view(interaction), ephemeral=ephemeral)
+
+            return self
+        else:
+            await interaction.edit_original_message(embed=self.embeds[self.current_page - 1],
+                                                    view=self.view(interaction))
+
+            return self
+
+
+answer = ButtonPaginator([])
+answer.start()

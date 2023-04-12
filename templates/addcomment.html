@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Добавить комментарий</h1>
+<form action="" method="post">
+    {{ form.hidden_tag() }}
+    <p>
+        {{ form.comment_text.label }}<br>
+        {{ form.comment_text(class="form-control") }}<br>
+        {% for error in form.comment_text.errors %}
+    <div class="alert alert-danger" role="alert">
+        {{ error }}
+    </div>
+    {% endfor %}
+    </p>
+    <p>{{ form.submit(type="submit", class="btn btn-primary") }}</p>
+    <div>{{ message }}</div>
+</form>
+{% endblock %}
