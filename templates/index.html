@@ -1,45 +1,85 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Встречайте: код наших братьев и сестёр</h1>
-<nobr>
-    {% if current_user.is_authenticated %}
-    <a href="addreview" class="btn btn-secondary">Add on Review</a>
-    {% endif %}
+<h2>Встречайте: код наших братьев и сестёр</h2>
+{% if current_user.is_authenticated %}
+<a href="addreview" class="btn btn-secondary" style="margin-bottom: 1em;">Показать код суду</a>
+{% endif %}
+<div>
     {% for item in reviews%}
-    <h2>Review #{{ item.id }}</h2>
-    <table id="reviews">
-        <tr>
-            <th>Code</th>
-            <th>Language</th>
-            <th>author</th>
-        </tr>
-        <tr>
-            <td>
-                <pre>
-                    {{ item.code }}
-                </pre>
-            </td>
-            <td>{{ item.language_obj.language }}</td>
-            <td>{{ item.author_user.nickname }}</td>
-        </tr>
+    <h3>Подсудимый код #{{ item.id }}</h3>
+    <table class="table table-dark table-striped-columns" id="reviews">
+        <thead>
+            <tr>
+                <th>Code</th>
+                <th>Language</th>
+                <th>Author</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>
+                    <pre>
+                        {{ item.code }}
+                    </pre>
+                </td>
+                <td>{{ item.language_obj.language }}</td>
+                <td>{{ item.author_user.nickname }}</td>
+            </tr>
+        </tbody>
     </table>
-    <br>
-    {% if current_user.is_authenticated and (current_user == item.author_user or current_user.id == 1) %}
     <div>
+        {% if current_user.is_authenticated and (current_user == item.author_user or current_user.id == 1) %}
         <a href="/review/{{ item.id }}" class="btn btn-warning">
-            Изменить
+        Изменить
         </a>
         <a href="/review_delete/{{ item.id }}" class="btn btn-danger">
-            Удалить
+        Удалить
         </a>
-    </div>
-    {% endif %}
-    <div>
+        {% endif %}
         <a href="/comment_review/{{ item.id }}" class="btn btn-primary">
-            Судить
+        Судить
         </a>
-    </div>
+    </div><br>
     {% endfor %}
-</nobr>
+</div>
 {% endblock %}
+
+<!-- <h1>Встречайте: код наших братьев и сестёр</h1>
+<div>
+{% if current_user.is_authenticated %}
+<a href="addreview" class="btn btn-secondary">Add on Review</a>
+{% endif %}
+{% for item in reviews%}
+<h2>Review #{{ item.id }}</h2>
+<table id="reviews">
+<tr>
+<th>Code</th>
+<th>Language</th>
+<th>author</th>
+</tr>
+<tr>
+<td>
+<pre>
+{{ item.code }}
+</pre>
+</td>
+<td>{{ item.language_obj.language }}</td>
+<td>{{ item.author_user.nickname }}</td>
+</tr>
+</table>
+<div>
+{% if current_user.is_authenticated and (current_user == item.author_user or current_user.id == 1) %}
+<a href="/review/{{ item.id }}" class="btn btn-warning">
+Изменить
+</a>
+<a href="/review_delete/{{ item.id }}" class="btn btn-danger">
+Удалить
+</a>
+{% endif %}
+<a href="/comment_review/{{ item.id }}" class="btn btn-primary">
+Судить
+</a>
+{% endfor %}
+</div><br><br>
+<</div> -->
