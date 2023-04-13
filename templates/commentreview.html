@@ -25,10 +25,10 @@
         <a href="/add_comment_review/{{ review.id }}" class="btn btn-primary">
             Добавить комментарий
         </a>
-    </div>
+    </div><br>
     {% endif %}
     {% for item in review.comments%}
-    <div>
+    <div class="alert alert-secondary">
         <h5>By: {{ item.author_user.nickname }}</h5>
         <md-block>
             {{ item.comment_text }}
