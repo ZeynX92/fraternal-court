@@ -39,11 +39,15 @@ def load_user(user_id: int):
     return db_sess.query(User).get(user_id)
 
 
-@app.route("/")
-@app.route("/index")
-def index():
+@app.route("/", defaults={'search_id': 0})
+@app.route("/index", defaults={'search_id': 0})
+@app.route("/index/<int:search_id>")
+def index(search_id=0):
     db_sess = db_session.create_session()
-    reviews = db_sess.query(Review).all()
+    if search_id == 0:
+        reviews = db_sess.query(Review).all()
+    else:
+        reviews = db_sess.query(Review).filter(Review.language == search_id).all()
     path = avatar_setup(current_user)
     return render_template("index.html", reviews=reviews, current_user=current_user, avatar=path.replace(".", ""),
                            size=SIZE)
@@ -111,6 +115,7 @@ def add_review():
             code = f.read()
         review.code = code
 
+        print(form.language.data)
         review.language = form.language.data
         current_user.reviews.append(review)
         db_sess.merge(current_user)

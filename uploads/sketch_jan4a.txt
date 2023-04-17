@@ -1,0 +1,52 @@
+// ПИНЫ ПОДКЛЮЧЕНИЯ
+#define DHT11_PIN 2
+#define LCD_address 0x27
+#define BUTTON_PIN 4
+
+
+// ИСПОЛЬЗУЕМЫЕ БИБЛИОТЕКИ
+#include <DHT.h>
+#include <Wire.h>
+#include <LiquidCrystal_I2C.h>
+
+
+// ИНИЦИАЛИЗАЦИЯ ДАТЧИКОВ
+DHT dht(DHT11_PIN, DHT11);
+LiquidCrystal_I2C lcd(LCD_address, 20, 4);
+
+// Переменные для работы с кнопкой
+bool buttonWasUp = true;
+int screen_idx = 0;
+
+void setup() {
+  dht.begin();
+  lcd.init();
+  lcd.backlight();
+  Serial.begin(9600);
+}
+
+void loop() {
+
+  // Опрашивать датчики по таймеру на millis()
+  float humidity = dht.readHumidity();
+  float temperature = dht.readTemperature();
+
+  //Ох, а сюда надо прикрутить опрос датчика давления каждые 10 мин и делать линейную аппроксимацию МНК
+
+  // Получив всю дребедень наконец-то можно обновлять экран по millis() и чекая screen_idx выводить нужный экран 
+
+  int buttonIsUp = digitalRead(BTN_PIN);
+  if (buttonWasUp && !buttonIsUp) {
+    delay(10);
+    buttonIsUp = digitalRead(BTN_PIN);
+    if (!buttonIsUp) {
+      screen_idx = (screen_idx + 1) % 4
+    }
+  }
+  buttonWasUp = buttonIsUp;
+
+  Serial.print("Humidity: ");
+  Serial.println(humidity);
+  Serial.print("Temperature: ");
+  Serial.println(temperature);
+}
