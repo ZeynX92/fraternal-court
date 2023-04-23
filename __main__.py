@@ -254,7 +254,7 @@ def main():
     db_session.global_init(f"db/{db_name}")
     db_sess = db_session.create_session()
 
-    app.run(port=8080, host='0.0.0.0', debug=True)
+    app.run(port=8080, host='0.0.0.0', debug=False)
 
 
 if __name__ == '__main__':
