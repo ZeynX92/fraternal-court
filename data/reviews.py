@@ -6,6 +6,7 @@ from .db_session import SqlAlchemyBase
 
 
 class Review(SqlAlchemyBase, SerializerMixin):
+    """Класс модели записи"""
     __tablename__ = 'reviews'
 
     id = sqlalchemy.Column(sqlalchemy.Integer,

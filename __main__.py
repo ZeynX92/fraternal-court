@@ -23,6 +23,7 @@ login_manager.init_app(app)
 
 
 def avatar_setup(current_user):
+    """Функция подготовки аватарки"""
     try:
         path = f"./static/imgs/{current_user.nickname}.png"
         with open(path, "wb") as file:
@@ -35,6 +36,7 @@ def avatar_setup(current_user):
 
 @login_manager.user_loader
 def load_user(user_id: int):
+    """Функция погрузки пользователя"""
     db_sess = db_session.create_session()
     return db_sess.query(User).get(user_id)
 
@@ -69,7 +71,7 @@ def login():
 
 
 @app.route('/register', methods=['GET', 'POST'])
-def reqister():
+def register():
     form = RegisterForm()
     if form.validate_on_submit():
         if form.password.data != form.password_again.data:

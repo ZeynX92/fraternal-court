@@ -6,6 +6,7 @@ from .db_session import SqlAlchemyBase
 
 
 class Comment(SqlAlchemyBase, SerializerMixin):
+    """Класс модели комментария"""
     __tablename__ = 'comments'
 
     id = sqlalchemy.Column(sqlalchemy.Integer,

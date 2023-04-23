@@ -1,52 +1,142 @@
-from tkinter import *
-from tkinter import ttk
+import disnake
+from disnake.ext import commands
+from disnake.flags import Intents
+import os
+import asyncio
+import config
+from tools.embed import Embed
+import sdc_api_py
+import logging
+
+from tools.webhook import send_log
 
 
-# TODO: Сделать нормальную систему отображения после удаления вкладок
-def delete_game_activity(event):
-    index = int(event.widget.winfo_parent()[-1]) - 2
-    activity[index].destroy()
-    activity[index] = None
+def on_log(record: logging.LogRecord):
+    asyncio.get_event_loop().run_until_complete(send_log(
+        content=Embed(
+            title='Поступил новый лог',
+            description=record.getMessage()
+        )
+    ))
 
 
-def add_game_activity():
-    activity.append(ttk.Frame(tab_control))
-    tab_control.add(activity[-1], text=f'Game Activity №{activity.index(activity[-1]) + 1}')
+logging.basicConfig(filename='app.log', filemode='a', format='[%(asctime)s] %(levelname)s - %(message)s')
+logging.root.addFilter(on_log)
 
-    label = Label(activity[-1], text=f'Настройка {activity.index(activity[-1]) + 1}-ой игровой активности')
-    label.grid(column=0, row=0)
+logging.warning("Запуск логирования")
 
-    tab_control.pack(expand=1, fill='both')
+# from beta.webhook import send_log
 
-    btn = Button(activity[-1], text="Удалить Игровую Активность")
-    btn.bind('<Button-1>', delete_game_activity)
-    btn.grid(column=0, row=1)
+failed_cogs = []
+load_cogs = []
+rollback_cogs = []
+
+if config.debug:
+    bot = commands.Bot(command_prefix='!', test_guilds=config.test_guilds, sync_commands=True)
+else:
+    bot = commands.Bot(command_prefix='!', sync_commands_debug=True, sync_commands=True)
+
+bot.remove_command("help")
+
+files = os.listdir("./cogs")
+
+async def activity_task():
+    while True:
+        # await bot.change_presence(status=disnake.Status.online, activity=disnake.Game('На техническом перерыве'))
+        await asyncio.sleep(5)
+        await bot.change_presence(status=disnake.Status.online, activity=disnake.Game('Пингани меня!'))
+        await asyncio.sleep(5)
 
 
-window = Tk()
-window.title("Discord Activity Manager")
-window.geometry('400x250')
+def rollback_cog(cog_name):
+    logging.warning(f"Поиск старого пакета для {cog_name}")
 
-tab_control = ttk.Notebook(window)
-activity = [ttk.Frame(tab_control)]
+    for name in files:
+        if name.endswith("_old.py") and name.startswith(cog_name[:-3]):
+            logging.warning(f"Найден старый пакет {name} для пакета {cog_name}")
+            logging.warning(f"Попытка загрузки {name[:-3]}")
+            try:
+                bot.load_extension(f"cogs.{name[:-3]}")
+                rollback_cogs.append(name)
+                files.remove(name)
+                logging.warning(f"Старый пакет для {cog_name}, {name} загружен")
 
-main_menu = ttk.Frame(tab_control)
-tab_control.add(main_menu, text='Панель Управления')
-main_menu_lbl = Label(main_menu, text='Основной Экран')
-main_menu_lbl.grid(column=0, row=0)
+            except commands.NoEntryPointError:
+                logging.warning(f"Для {name} не найдена точка входа")
+                return False
 
-btn = Button(main_menu, text="Создать Новую Игровую Активность", command=add_game_activity)
-btn.grid(column=0, row=1)
+            except commands.ExtensionFailed:
+                logging.warning(f"Не удалось загрузить {name}")
+                return False
 
-for i in range(len(activity)):
-    tab_control.add(activity[i], text=f'Game Activity №{i + 1}')
+            return True
 
-    lbl = Label(activity[i], text=f'Настройка {i + 1}-ой игровой активности')
-    lbl.grid(column=0, row=0)
+    return False
 
-    tab_control.pack(expand=1, fill='both')
 
-    btn = Button(activity[-1], text="Удалить Игровую Активность")
-    btn.grid(column=0, row=1)
+logging.warning("Запуск загрузщика когов")
 
-window.mainloop()
+for name in files:
+    if name.endswith('.py') and not name.endswith("_old.py"):
+        if name not in config.cogs_ignore:
+            if name not in failed_cogs:
+                try:
+                    bot.load_extension(f"cogs.{name[:-3]}")
+                    logging.warning(f"Загружен {name}")
+                    load_cogs.append(name)
+                except commands.ExtensionAlreadyLoaded:
+                    logging.warning(f"{name} уже был загружен")
+                    files.remove(name)
+
+                except commands.NoEntryPointError:
+                    logging.warning(f"Для {name} не найдена точка входа")
+                    files.remove(name)
+
+                    if not rollback_cog(name):
+                        logging.warning(f"Не удалось откатить пакет {name}")
+                    failed_cogs.append(name)
+
+                except commands.ExtensionFailed:
+                    logging.warning(f"Не удалось загрузить {name}")
+                    files.remove(name)
+
+                    if not rollback_cog(name):
+                        logging.warning(f"Не удалось откатить пакет {name}")
+                    failed_cogs.append(name)
+
+
+
+@bot.event
+async def on_ready():
+
+    if not config.debug:
+        bots = sdc_api_py.Bots(bot,
+                               "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6IjkxMzA4NTk1Njc2MzAyNTQzOSIsInBlcm1zIjowLCJpYXQiOjE2NDM2MzI4MjF9.YGitvHKckGLPga-tCae8kKgIRxj3odiIdADwv0z21CA",
+                               fork_name='disnake', logging=True)
+        bots.create_loop()
+    await activity_task()
+
+
+@bot.command()
+async def load(ctx, extension):
+    if ctx.author.id in config.devs:
+        bot.load_extension(f"cogs.{extension}")
+        await ctx.send("Loading cog...")
+
+
+@bot.command()
+async def unload(ctx, extension):
+    if ctx.author.id in config.devs:
+        bot.unload_extension(f"cogs.{extension}")
+        await ctx.send("Unloading cog...")
+
+
+@bot.command()
+async def reload(ctx, extension):
+    if ctx.author.id in config.devs:
+        bot.unload_extension(f"cogs.{extension}")
+        bot.load_extension(f"cogs.{extension}")
+        await ctx.send("Reloading cog...")
+
+
+bot.run(config.token)

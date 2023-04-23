@@ -6,6 +6,7 @@ from .db_session import SqlAlchemyBase
 
 
 class Language(SqlAlchemyBase, SerializerMixin):
+    """Класс модели языка программирования"""
     __tablename__ = 'languages'
 
     id = sqlalchemy.Column(sqlalchemy.Integer,

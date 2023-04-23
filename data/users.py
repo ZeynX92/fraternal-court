@@ -11,6 +11,7 @@ import urllib, hashlib
 
 
 class User(SqlAlchemyBase, UserMixin, SerializerMixin):
+    """Класс модели пользователя"""
     __tablename__ = 'users'
 
     id = sqlalchemy.Column(sqlalchemy.Integer,
@@ -23,11 +24,10 @@ class User(SqlAlchemyBase, UserMixin, SerializerMixin):
     reviews = orm.relationship("Review", back_populates='author_user')
 
     def get_avatar(self, size):
-        default = "https://cdn.icon-icons.com/icons2/1371/PNG/512/robot03_90833.png"
-        gravatar_url = "https://www.gravatar.com/avatar/" + hashlib.md5(
-            self.email.lower().encode('utf-8')).hexdigest() + "?"
-        gravatar_url += urllib.parse.urlencode({'d': default, 's': str(size)})
-        print(gravatar_url)
+        """Функция генерации аватарки"""
+        digest = hashlib.md5(self.email.lower().encode('utf-8')).hexdigest()
+        gravatar_url = 'https://www.gravatar.com/avatar/{}?d=identicon&s={}'.format(
+            digest, size)
         return requests.get(gravatar_url).content
 
     def __repr__(self):

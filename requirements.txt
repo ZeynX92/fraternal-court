@@ -5,3 +5,4 @@ flask_wtf
 wtforms
 sqlalchemy
 sqlalchemy_serializer
+requests

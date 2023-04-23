@@ -4,5 +4,6 @@ from wtforms.validators import DataRequired
 
 
 class AddCommentForm(FlaskForm):
+    """Форма добавления комментария"""
     comment_text = TextAreaField("Введите свой комментарий с использованием md", validators=[DataRequired()])
     submit = SubmitField('Опубликовать')
